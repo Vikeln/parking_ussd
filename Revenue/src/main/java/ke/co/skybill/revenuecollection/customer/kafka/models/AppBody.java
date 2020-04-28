@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class AppBody {
     private String appKey;
+    private String parent;
     private String appUser;
     private String appName;
 

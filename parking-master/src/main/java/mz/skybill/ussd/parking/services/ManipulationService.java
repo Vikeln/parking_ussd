@@ -48,45 +48,45 @@ public class ManipulationService {
                 case "2":
                     break;
                 case "3":   // Penalties
-                    customerProduct = customerService.getCustomerProduct(data.get(0).toUpperCase(), data.get(2), session);
-                    switch (sessionInputs.size()) {
-                        case 2:
-                            break;
-                        case 3:
-                            if (sessionInputs.get(1).equals("2")) {
-                                object = matolaService.checkProductProfile(customerProduct, session);
-                            } else {
-
-                                customerProduct = customerService.getCustomerProduct(data.get(0).toUpperCase(), data.get(2), session);
-//                                matolaService.checkProductFile(customerProduct,session);
-                            }
-
-                            break;
-                        case 5:
-                            if (customerProduct != null)
-                                payment_productId = customerService.getProductPaymentPeriod(session, data);
-                            object = matolaService.taxPaymentEnforcement(null, customerProduct, session, payment_productId);
-//                            else
-//                                object = customerService.getBillPresentment(null,customerProduct,data.get(2),session);
-
-                            break;
-
-                    }
+//                    customerProduct = customerService.getCustomerProduct(data.get(0).toUpperCase(), data.get(2), session);
+//                    switch (sessionInputs.size()) {
+//                        case 2:
+//                            break;
+//                        case 3:
+//                            if (sessionInputs.get(1).equals("2")) {
+//                                object = matolaService.checkProductProfile(customerProduct, session);
+//                            } else {
+//
+//                                customerProduct = customerService.getCustomerProduct(data.get(0).toUpperCase(), data.get(2), session);
+////                                matolaService.checkProductFile(customerProduct,session);
+//                            }
+//
+//                            break;
+//                        case 5:
+//                            if (customerProduct != null)
+//                                payment_productId = customerService.getProductPaymentPeriod(session, data);
+//                            object = matolaService.taxPaymentEnforcement(null, customerProduct, session, payment_productId);
+////                            else
+////                                object = customerService.getBillPresentment(null,customerProduct,data.get(2),session);
+//
+//                            break;
+//
+//                    }
                     break;
                 case "5":
-                    switch (sessionInputs.size()) {
-                        case 2:
-                            object = matolaService.verifyReceipt(data.get(1), session);
-                            break;
-
-                    }
+//                    switch (sessionInputs.size()) {
+//                        case 2:
+//                            object = matolaService.verifyReceipt(data.get(1), session);
+//                            break;
+//
+//                    }
                     break;
                 default:
-                    CustomerModel customerModel = matolaService.registerUser(null, data.get(0), data.get(1), data.get(2), session);
-                    if (customerModel != null) {
-                        String accesstoken = matolaService.getAccessToken(session.getMsisdn());
-                        session.setAccessToken(accesstoken);
-                    }
+//                    CustomerModel customerModel = matolaService.registerUser(null, data.get(0), data.get(1), data.get(2), session);
+//                    if (customerModel != null) {
+//                        String accesstoken = matolaService.getAccessToken(session.getMsisdn());
+//                        session.setAccessToken(accesstoken);
+//                    }
                     break;
 
 

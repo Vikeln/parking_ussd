@@ -103,7 +103,7 @@ public class USSDUtil<T> {
     public static List<String> prefillVehicles(List<CustomerProduct> models) {
         List<String> inputs = new ArrayList<>();
         String text = "";
-        int i = 1;
+        int i = 2;
         if (models != null) {
             for (CustomerProduct productModel : models) {
                 text = Translator.toLocale("prefill.data", i, productModel.getSerial());

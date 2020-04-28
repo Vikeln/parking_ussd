@@ -77,15 +77,12 @@ public class USSDMenu<T> {
                 text = DailyParkingOptions(session, USSDUtil.skipFirst(inputs));
             else if (data.get(0).equalsIgnoreCase(Constants.Parking.SEASONAL))
                 text = ParkingTypes(session, USSDUtil.skipFirst(inputs));
+            else if (data.get(0).equalsIgnoreCase(Constants.Parking.Vehicles))
+                text = registerNewVehicle(session, USSDUtil.skipFirst(inputs));
             else
                 text = Clamping(session, USSDUtil.skipFirst(inputs));
         }
 
-        return text;
-    }
-
-    public static String MyVehicles(Session session, List<String> inputs, Object object) {
-        String text = "Not yet";
         return text;
     }
 
@@ -94,17 +91,16 @@ public class USSDMenu<T> {
         boolean isText = false;
         switch (inputs.size()) {
             case 0:
-                ProductCustomerResponseData data = matolaService.getCustomerProduct(140,session);
+                ProductCustomerResponseData data = matolaService.getCustomerProduct(140, session);
                 if (data.getData().isEmpty())
                     text = USSDUtil.getText(Translator.toLocale("no.vehicles"), State.CON);
-                else{
+                else {
                     List<String> strings = USSDUtil.prefillVehicles(data.getData());
                     text = Translator.toLocale("list.vehicles");
-
                     for (String s : strings) {
                         text += s;
                         if (strings.get(strings.size() - 1) != s)
-                            text += "/n";
+                            text += "\n";
 
                         if (strings.get(strings.size() - 1) == s)
                             text = text.trim() + Translator.toLocale("menu.main.back.exit");
@@ -112,24 +108,30 @@ public class USSDMenu<T> {
                 }
                 break;
             default:
-                switch (inputs.stream().findFirst().get()) {
-                    default:
-                        isText = true;
-                        text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
-                        break;
-                }
-//
-//                List<String> data = USSDUtil.getStringInputs(sessionLogRepository.findAllBySession(session));
-////                log.info("data kwa after choosing zones {}", Util.toJson(data));
+                List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+                if (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
+                    text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+                else
+                    text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
 
-                if (!isText)
-                    text = paymentConfirmation(session, USSDUtil.skipFirst(inputs));
+//
+//                switch (inputs.stream().findFirst().get()) {
+//                    default:
+//                        isText = true;
+//                        text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
+//                        break;
+//                }
+//
+//               List<String> data = USSDUtil.getStringInputs(sessionLogRepository.findAllBySession(session));
+//                log.info("data kwa after choosing zones {}", Util.toJson(data));
+//
+//                if (!isText)
+//                    text = paymentConfirmation(session, USSDUtil.skipFirst(inputs));
 
         }
 
         return text;
     }
-
 
     public static String ZoneOptions(Session session, List<String> inputs) {
         String text = null;
@@ -156,6 +158,33 @@ public class USSDMenu<T> {
                 if (!isText)
                     text = paymentConfirmation(session, USSDUtil.skipFirst(inputs));
 
+        }
+
+        return text;
+    }
+
+    public static String registerNewVehicle(Session session, List<String> inputs) {
+        String text = null;
+        boolean isText = false;
+        List<String> data = USSDUtil.getStringInputs(sessionLogRepository.findAllBySession(session));
+        log.info("Data {}" , Util.toJson(data));
+        switch (inputs.size()) {
+            case 0:
+                CustomerProductParkingRequest model = CustomerProductParkingRequest.transform(matolaService.getUser(session).getAccountOwner().getId(),140,data.get(1));
+                log.info("CustomerProductParkingRequest {}" , Util.toJson(model));
+                CustomerProductResponse response = matolaService.registerVehicleParking(model,session);
+                if (response.getStatus().getCode() == 0)
+                    text = USSDUtil.getText(Translator.toLocale("vehicle.register.sucess", response.getData().getSerial()), State.END);
+                else
+                    text = USSDUtil.getText(Translator.toLocale("vehicle.register.fail", model.getVehicleRegistration(), response.getStatus().getMessage()), State.END);
+                break;
+            default:
+                switch (inputs.stream().findFirst().get()) {
+                    default:
+                        isText = true;
+                        text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
+                        break;
+                }
         }
 
         return text;
@@ -345,7 +374,7 @@ public class USSDMenu<T> {
                     for (String s : strings) {
                         text += s;
                         if (strings.get(strings.size() - 1) != s)
-                            text += "/n";
+                            text += "\n";
 
                         if (strings.get(strings.size() - 1) == s)
                             text = text.trim() + Translator.toLocale("menu.main.back.exit");
@@ -396,14 +425,19 @@ public class USSDMenu<T> {
                     );
                     model = matolaService.receiptParking(EnforceParkingRequest.transform(null, "", 140, data.get(3).equalsIgnoreCase(Constants.Season.MONTHLY) ? 20 : (data.get(3).equalsIgnoreCase(Constants.Season.Annual) ? 21 : 19), data.get(2).equalsIgnoreCase(Constants.ParkingType.Residential) ? 2 : (data.get(2).equalsIgnoreCase(Constants.ParkingType.Commercial) ? 3 : 4), requests), session);
                 }
-                log.info("model for receipt {}", Util.toJson(model));
+                log.info("model from receipt {}", Util.toJson(model));
 //                String newText = Util.prependText("", USSDUtil.prefillData(data), "");
                 text = Translator.toLocale("confirm.prefiill", data.get(1), model.getData().getTotalAmount(), model.getData().getTotalAmount());
                 text = USSDUtil.getText(text, State.CON);
                 break;
             default:
-                switch (inputs.stream().findFirst().get()) {
-                    case "1":
+                log.info("inputs after pay confirm    " + inputs.stream().findFirst().get());
+                List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+
+                log.info("switching after pay confirm    " + Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)));
+
+                switch (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1))) {
+                    case 1:
                         if (data.get(0).equalsIgnoreCase(Constants.Parking.DAILY)) {
                             requests.add(EnforceVehicleRequest.transform(
                                     data.get(1),
@@ -419,7 +453,14 @@ public class USSDMenu<T> {
                             );
                             model = matolaService.enforceParking(EnforceParkingRequest.transform(null, "", 140, data.get(3).equalsIgnoreCase(Constants.Season.MONTHLY) ? 20 : (data.get(3).equalsIgnoreCase(Constants.Season.Annual) ? 21 : 19), data.get(2).equalsIgnoreCase(Constants.ParkingType.Residential) ? 2 : (data.get(2).equalsIgnoreCase(Constants.ParkingType.Commercial) ? 3 : 4), requests), session);
                         }
-                        text = USSDUtil.getText(Translator.toLocale("payment.sucess", model.getData().getReport().getResponse().getTxtMessage()), State.END);
+                        String message = "";
+                        if (model.getData().getReport().getResponse().getTxtMessage() != null)
+                            message = model.getData().getReport().getResponse().getTxtMessage();
+                        else if (model.getData().getReport().getResponse().getInvoiceNo() != null)
+                            message += "Please pay MZN " + model.getData().getTotalAmount() + " using reference invoiceNo : " + model.getData().getReport().getResponse().getInvoiceNo();
+                        else
+                            message = model.getStatus().getMessage();
+                        text = USSDUtil.getText(Translator.toLocale("payment.sucess", message), State.END);
                         break;
                     default:
                         text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);

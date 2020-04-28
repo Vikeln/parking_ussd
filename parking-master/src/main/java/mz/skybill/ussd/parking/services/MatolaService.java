@@ -185,6 +185,16 @@ public class MatolaService {
         return model;
     }
 
+    public CustomerProductResponse registerVehicleParking(CustomerProductParkingRequest request, Session session) {
+        CustomerProductResponse model = null;
+
+        ResponseEntity<String> responseEntity = networkService.postData(request, getHeaders(session), config.getCustomerService() + "/enforcement/parking");
+        if (responseEntity.getStatusCodeValue() == 200) {
+            model = new Util<CustomerProductResponse>().fromJson(responseEntity.getBody(), CustomerProductResponse.class);
+        }
+        return model;
+    }
+
     public ReceiptResponse enforceParking(EnforceParkingRequest request, Session session) {
         ReceiptResponse model = null;
 

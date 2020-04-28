@@ -6,6 +6,7 @@ public class Constants {
         String DAILY = "Daily Parking";
         String SEASONAL = "Seasonal Parking";
         String Clamping = "Clamping";
+        String Vehicles = "My Vehicles";
     }
     public interface ParkingType{
         String Residential = "Residential";

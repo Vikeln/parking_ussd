@@ -179,9 +179,9 @@ public class USSDController {
 
             if (text.startsWith("END") || previousLog.getScreenText().contains("Enter Last Name")) {
                 List<SessionLog> sessionLogs = sessionLogRepository.findAllBySession(session);
-                manipulationService.getUssdInputs(session,sessionLogs);
-
-                object = manipulationService.getUssdInputs(session, sessionLogs);
+//                manipulationService.getUssdInputs(session,sessionLogs);
+//
+//                object = manipulationService.getUssdInputs(session, sessionLogs);
                 if (object != null)
                     text = EndDisplay.getEndTextDisplay(object, session, sessionLogs);
 

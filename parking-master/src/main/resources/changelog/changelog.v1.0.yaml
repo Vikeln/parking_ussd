@@ -1,0 +1,180 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: Edward
+      changes:
+        - createTable:
+            tableName: session
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: date_created
+                  type: datetime(6)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: msisdn
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: session_id
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: operator
+                  type: varchar(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: is_merchant
+                  type: bit
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiry_date
+                  type: datetime(6)
+  - changeSet:
+      id: 2
+      author: Edward
+      changes:
+        - createTable:
+            tableName: session_log
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: session
+                  type: bigint
+                  constraints:
+                    nullable: false
+                    foreignKeyName: session_session_log
+                    referencedTableName: session
+                    referencedColumnNames: id
+                    deferrable: false
+                    initiallyDeferred: false
+              - column:
+                  name: date_created
+                  type: datetime(6)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: screen_text
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: user_input
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: inputs
+                  type: text
+                  constraints:
+                    nullable: false
+
+
+  - changeSet:
+      id: 3
+      author: Edward
+      changes:
+        - dropColumn:
+            tableName: session_log
+            columnName: inputs
+
+  - changeSet:
+      id: 4
+      author: Edward
+      changes:
+        - addColumn:
+            tableName: session
+            columns:
+              - column:
+                  name: inputs
+                  type: text
+
+
+  - changeSet:
+      id: 5
+      author: Jobunski
+      changes:
+        -dropColumn:
+          tableName: session
+          -columnname: is_merchant
+
+  - changeSet:
+      id: 6
+      author: Jobunski
+      changes:
+        - dropColumn:
+            tableName: session
+            columnName: is_merchant
+
+  - changeSet:
+      id: 7
+      author: Jobunski
+      changes:
+        - addColumn:
+            tableName: session
+            columns:
+              - column:
+                  name: access_token
+                  type: text
+
+
+  - changeSet:
+      id: 8
+      author: Jobunski
+      changes:
+        - addColumn:
+            tableName: session
+            columns:
+              - column:
+                  name: registered
+                  type: boolean
+
+
+  - changeSet:
+      id: 9
+      author: Jobunski
+      changes:
+        - createTable:
+            tableName: parent_product
+            columns:
+              - column:
+                  name: id
+                  type: int
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: parent_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+
+
+
+
+
+
+

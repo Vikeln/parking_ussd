@@ -52,10 +52,10 @@ public class USSDMenu<T> {
                 text = USSDUtil.getText(Translator.toLocale("welcome.newuser"), State.CON);
 
         } else if (inputs.stream().findFirst().get().equalsIgnoreCase("1")) {
-//            if (session.isRegistered())
-//                text = ChoiceVehicles(session, USSDUtil.skipFirst(inputs));
-//            else
-            text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+            if (session.isRegistered())
+                text = ChoiceVehicles(session, USSDUtil.skipFirst(inputs));
+            else
+                text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
 
         } else if (inputs.stream().findFirst().get().equalsIgnoreCase("2")) {
 
@@ -197,9 +197,10 @@ public class USSDMenu<T> {
             default:
                 log.info("got here");
                 List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
-                if (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
-                    text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
-                else {
+//                if (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
+//                    text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+//                else
+                if (sessionInputs.size() == 3) {
                     ProductCustomerResponseData data1 = matolaService.getCustomerProduct(140, session);
                     String in = "";
                     int i = 0;
@@ -217,7 +218,11 @@ public class USSDMenu<T> {
                     session = sessionRepository.save(session);
 
                     text = DailyParkingOptions(session, USSDUtil.skipFirst(inputs));
-                }
+                } else
+                    text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+//                else {
+//
+//                }
 
         }
 
@@ -294,6 +299,7 @@ public class USSDMenu<T> {
     public static boolean isnumeric(String s) {
         return s != null && s.matches("[-+]?\\d*\\.?\\d+");
     }
+
     public static String registerNewVehicle(Session session, List<String> inputs) {
         String text = null;
         boolean isText = false;

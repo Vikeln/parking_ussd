@@ -205,11 +205,16 @@ public class MatolaService {
         return model;
     }
 
-    public List<CustomerProductChargeEntryModel> getCharges(String request, Session session) {
+    public List<CustomerProductChargeEntryModel> getCharges(String request, Integer customer, Session session) {
         ChargesResponse model = null;
         List<CustomerProductChargeEntryModel> charges = new ArrayList<>();
 
-        ResponseEntity<String> responseEntity = networkService.getData(getHeaders(session), config.getCustomerService() + "/transact/penalty-bills?serial=" + request);
+        ResponseEntity<String> responseEntity;
+        if (request != null)
+            responseEntity = networkService.getData(getHeaders(session), config.getCustomerService() + "/transact/penalty-bills?serial=" + request);
+        else
+            responseEntity = networkService.getData(getHeaders(session), config.getCustomerService() + "/transact/penalty-bills?customer=" + customer);
+
         if (responseEntity.getStatusCodeValue() == 200) {
             model = new Util<ChargesResponse>().fromJson(responseEntity.getBody(), ChargesResponse.class);
             charges = model.getData();

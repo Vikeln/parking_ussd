@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import mz.skybill.ussd.parking.entities.Session;
 import mz.skybill.ussd.parking.models.*;
 import mz.skybill.ussd.parking.repos.SessionLogRepository;
+import mz.skybill.ussd.parking.repos.SessionRepository;
 import mz.skybill.ussd.parking.services.CustomerService;
 import mz.skybill.ussd.parking.services.MatolaService;
 import mz.skybill.ussd.parking.services.USSDService;
@@ -18,7 +19,7 @@ import java.util.List;
 @Component
 public class USSDMenu<T> {
 
-
+    private static SessionRepository sessionRepository;
     private static MatolaService matolaService;
     private static CustomerService customerService;
     private static SessionLogRepository sessionLogRepository;
@@ -26,12 +27,13 @@ public class USSDMenu<T> {
     private static USSDService ussdService;
 
 
-    public USSDMenu(MatolaService matolaService, USSDService ussdService, CustomerService customerService, SessionLogRepository sessionLogRepository, ObjectMapper objectMapper) {
+    public USSDMenu(MatolaService matolaService, USSDService ussdService, CustomerService customerService, SessionLogRepository sessionLogRepository, ObjectMapper objectMapper, SessionRepository sessionRepository) {
         this.customerService = customerService;
         this.sessionLogRepository = sessionLogRepository;
         this.objectMapper = objectMapper;
         this.ussdService = ussdService;
         this.matolaService = matolaService;
+        this.sessionRepository = sessionRepository;
     }
 
     public static Logger log = LoggerFactory.getLogger(USSDMenu.class);
@@ -44,10 +46,15 @@ public class USSDMenu<T> {
     public static String OpeningMenu(Session session, List<String> inputs, Object object) {
         String text = "";
         if (inputs.isEmpty()) {
-            text = USSDUtil.getText(Translator.toLocale("welcome.user"), State.CON);
+            if (session.isRegistered())
+                text = USSDUtil.getText(Translator.toLocale("welcome.user"), State.CON);
+            else
+                text = USSDUtil.getText(Translator.toLocale("welcome.newuser"), State.CON);
 
         } else if (inputs.stream().findFirst().get().equalsIgnoreCase("1")) {
-
+//            if (session.isRegistered())
+//                text = ChoiceVehicles(session, USSDUtil.skipFirst(inputs));
+//            else
             text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
 
         } else if (inputs.stream().findFirst().get().equalsIgnoreCase("2")) {
@@ -55,8 +62,10 @@ public class USSDMenu<T> {
             text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
 
         } else if (inputs.stream().findFirst().get().equalsIgnoreCase("3")) {
-
-            text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+            if (session.isRegistered())
+                text = chargeOptions(session, USSDUtil.skipFirst(inputs));
+            else
+                text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
         } else if (inputs.stream().findFirst().get().equalsIgnoreCase("4")) {
 
             text = MyVehicles(session, USSDUtil.skipFirst(inputs));
@@ -79,12 +88,45 @@ public class USSDMenu<T> {
                 text = ParkingTypes(session, USSDUtil.skipFirst(inputs));
             else if (data.get(0).equalsIgnoreCase(Constants.Parking.Vehicles))
                 text = registerNewVehicle(session, USSDUtil.skipFirst(inputs));
-            else
+            else {
                 text = Clamping(session, USSDUtil.skipFirst(inputs));
+            }
         }
 
         return text;
     }
+
+
+    public static String switchops(Session session, List<String> inputs) {
+        String text = null;
+        boolean isText = false;
+        switch (inputs.size()) {
+            case 0:
+                text = USSDUtil.getText(Translator.toLocale("daily.options"), State.CON);
+                break;
+            default:
+                switch (inputs.stream().findFirst().get()) {
+                    case "1":
+                        break;
+                    case "2":
+                        break;
+                    default:
+                        isText = true;
+                        text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
+                        break;
+                }
+
+                List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+
+                if (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
+                    text = ZoneOptions(session, USSDUtil.skipFirst(inputs));
+                else
+                    text = HourlyOptions(session, USSDUtil.skipFirst(inputs));
+        }
+
+        return text;
+    }
+
 
     public static String MyVehicles(Session session, List<String> inputs) {
         String text = null;
@@ -99,8 +141,6 @@ public class USSDMenu<T> {
                     text = Translator.toLocale("list.vehicles");
                     for (String s : strings) {
                         text += s;
-                        if (strings.get(strings.size() - 1) != s)
-                            text += "\n";
 
                         if (strings.get(strings.size() - 1) == s)
                             text = text.trim() + Translator.toLocale("menu.main.back.exit");
@@ -109,24 +149,75 @@ public class USSDMenu<T> {
                 break;
             default:
                 List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+                text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+        }
+
+        return text;
+    }
+
+    public static boolean isNumeric(String str) {
+        try {
+            Double.parseDouble(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    public static String shareVehicles(Session session, List<String> inputs) {
+
+        String text = null;
+        List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+        log.info("sessionInputs {}", Util.toJson(sessionInputs));
+        log.info("sessionInputs {}", Util.toJson(sessionInputs.get(sessionInputs.size() - 1)));
+        return text;
+    }
+
+    public static String ChoiceVehicles(Session session, List<String> inputs) {
+        String text = null;
+        boolean isText = false;
+        switch (inputs.size()) {
+            case 0:
+                ProductCustomerResponseData data = matolaService.getCustomerProduct(140, session);
+                if (data.getData().isEmpty())
+                    text = USSDUtil.getText(Translator.toLocale("no.vehicles"), State.CON);
+                else {
+                    List<String> strings = USSDUtil.prefillVehicles(data.getData());
+                    text = Translator.toLocale("choice.vehicles");
+                    for (String s : strings) {
+                        text += s;
+//                        if (strings.get(strings.size() - 1) != s)
+//                            text += "\n";
+
+                        if (strings.get(strings.size() - 1) == s)
+                            text = text.trim() + Translator.toLocale("menu.main.back.exit");
+                    }
+                }
+                break;
+            default:
+                log.info("got here");
+                List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
                 if (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
                     text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
-                else
-                    text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
+                else {
+                    ProductCustomerResponseData data1 = matolaService.getCustomerProduct(140, session);
+                    String in = "";
+                    int i = 0;
+                    log.info(Util.toJson(sessionInputs));
+                    for (String s : sessionInputs) {
+                        if (sessionInputs.get(sessionInputs.size() - 1) != s) {
+                            in += s + "*";
+                        } else {
+                            in += data1.getData().get(Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) - 1).getSerial() + "*";
+                        }
+                        ++i;
+                    }
+                    session.setInputs(in);
+                    log.info("session.setInputs(in) " + in);
+                    session = sessionRepository.save(session);
 
-//
-//                switch (inputs.stream().findFirst().get()) {
-//                    default:
-//                        isText = true;
-//                        text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
-//                        break;
-//                }
-//
-//               List<String> data = USSDUtil.getStringInputs(sessionLogRepository.findAllBySession(session));
-//                log.info("data kwa after choosing zones {}", Util.toJson(data));
-//
-//                if (!isText)
-//                    text = paymentConfirmation(session, USSDUtil.skipFirst(inputs));
+                    text = DailyParkingOptions(session, USSDUtil.skipFirst(inputs));
+                }
 
         }
 
@@ -163,16 +254,57 @@ public class USSDMenu<T> {
         return text;
     }
 
+    public static String chargeOptions(Session session, List<String> inputs) {
+        String text = null;
+        boolean isText = false;
+        switch (inputs.size()) {
+            case 0:
+                text = USSDUtil.getText(Translator.toLocale("charge.options"), State.CON);
+                break;
+            default:
+                switch (inputs.stream().findFirst().get()) {
+                    case "1":
+                        break;
+                    case "2":
+                        break;
+                    default:
+                        isText = true;
+                        text = USSDUtil.getText(Translator.toLocale("invalid.option"), State.CON);
+                        break;
+                }
+
+                List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+
+                log.info("sessionInputs {}", Util.toJson(sessionInputs));
+
+                if (!isText) {
+                    if (isnumeric(sessionInputs.get(sessionInputs.size() - 1)) && Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
+//                    if (Integer.parseInt(sessionInputs.get(sessionInputs.size() - 1)) == 1)
+                        text = Clamping(session, USSDUtil.skipFirst(inputs));
+                    else
+                        text = getNumberPlate(session, USSDUtil.skipFirst(inputs));
+                }
+
+
+        }
+
+        return text;
+    }
+
+    public static boolean isnumeric(String s) {
+        return s != null && s.matches("[-+]?\\d*\\.?\\d+");
+    }
     public static String registerNewVehicle(Session session, List<String> inputs) {
         String text = null;
         boolean isText = false;
         List<String> data = USSDUtil.getStringInputs(sessionLogRepository.findAllBySession(session));
-        log.info("Data {}" , Util.toJson(data));
+        log.info("Data {}", Util.toJson(data));
         switch (inputs.size()) {
             case 0:
-                CustomerProductParkingRequest model = CustomerProductParkingRequest.transform(matolaService.getUser(session).getAccountOwner().getId(),140,data.get(1));
-                log.info("CustomerProductParkingRequest {}" , Util.toJson(model));
-                CustomerProductResponse response = matolaService.registerVehicleParking(model,session);
+                List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
+                CustomerProductParkingRequest model = CustomerProductParkingRequest.transform(matolaService.getUser(session).getAccountOwner().getId(), 140, sessionInputs.get(sessionInputs.size() - 1));
+                log.info("CustomerProductParkingRequest {}", Util.toJson(model));
+                CustomerProductResponse response = matolaService.registerVehicleParking(model, session);
                 if (response.getStatus().getCode() == 0)
                     text = USSDUtil.getText(Translator.toLocale("vehicle.register.sucess", response.getData().getSerial()), State.END);
                 else
@@ -364,9 +496,20 @@ public class USSDMenu<T> {
         switch (inputs.size()) {
             case 0:
                 List<String> sessionInputs = new ArrayList<>(Arrays.asList(session.getInputs().split("\\*")));
-                List<CustomerProductChargeEntryModel> charges = matolaService.getCharges(sessionInputs.get(2), session);
+
+                List<CustomerProductChargeEntryModel> charges;
+                if (sessionInputs.size() > 2 && Integer.parseInt(sessionInputs.get(2)) != 1)
+                    charges = matolaService.getCharges(sessionInputs.get(3), null, session);
+                else
+                    charges = matolaService.getCharges(null, matolaService.getUser(session).getAccountOwner().getId(), session);
+
+//                if (session.isRegistered())
+//                else
                 List<String> strings = USSDUtil.prefillCharges(charges);
-                if (strings.isEmpty())
+                if (strings.isEmpty() && sessionInputs.size() > 2 && Integer.parseInt(sessionInputs.get(2)) != 1)
+                    text = USSDUtil.getText(Translator.toLocale("charges.unavailable.serial", sessionInputs.get(3)), State.END);
+//                    text = USSDUtil.getText(Translator.toLocale("charges.unavailable.serial", sessionInputs.get(3)), State.END);
+                else if (strings.isEmpty())
                     text = USSDUtil.getText(Translator.toLocale("charges.unavailable"), State.END);
                 else {
                     text = Translator.toLocale("list.charges");

@@ -41,11 +41,16 @@ public class USSDService {
     }
 
     public Boolean findUserIsRegistered(String msisdn) {
-        ResponseEntity<String> responseEntity = networkService.sendData(config.getCustomerService() + "/customer/verify/" + msisdn, HttpMethod.GET, null, null);
+        log.info("msisdn " + msisdn);
+        if (msisdn.startsWith(" 258")) {
+            msisdn = "+" + msisdn.substring(1);
+        }
+        log.info("msisdn after " + msisdn);
+        ResponseEntity<String> responseEntity = networkService.sendData(config.getAccountService() + "/users/verify/" + msisdn, HttpMethod.GET, null, null);
         boolean isRegistered = false;
         if (responseEntity.getStatusCodeValue() == 200) {
             VerificationResponse verificationResponse = new Util<VerificationResponse>().fromJson(responseEntity.getBody(), VerificationResponse.class);
-            if (verificationResponse.getStatus().getCode() == 0 || verificationResponse.getStatus().getCode() == 3) {
+            if (verificationResponse.getStatus().getCode() == 0) {
                 isRegistered = true;
             }
         }

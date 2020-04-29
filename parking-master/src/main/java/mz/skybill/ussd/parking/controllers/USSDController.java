@@ -179,9 +179,7 @@ public class USSDController {
 
             if (text.startsWith("END") || previousLog.getScreenText().contains("Enter Last Name")) {
                 List<SessionLog> sessionLogs = sessionLogRepository.findAllBySession(session);
-//                manipulationService.getUssdInputs(session,sessionLogs);
-//
-//                object = manipulationService.getUssdInputs(session, sessionLogs);
+
                 if (object != null)
                     text = EndDisplay.getEndTextDisplay(object, session, sessionLogs);
 
@@ -204,7 +202,7 @@ public class USSDController {
     public String mainMenu(Session session, Object object) {
         String text = "CON";
         List<String> inputs = USSDUtil.skipFirst(session.getSessionInputs());
-        if (session.isRegistered()) {
+//        if (session.isRegistered()) {
             switch (session.getSessionInputs().stream().findFirst().get()) {
                 case "0":
                     Session dbSession = ussdService.findUserSessionWithDate(session.getMsisdn(), new Date());
@@ -220,10 +218,10 @@ public class USSDController {
                     break;
             }
 
-        } else {
-            text = USSDUtil.getText(Translator.toLocale("full.registration.required"), State.END);
-
-        }
+//        } else {
+//            text = USSDUtil.getText(Translator.toLocale("full.registration.required"), State.END);
+//
+//        }
 
         return text;
     }

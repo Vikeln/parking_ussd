@@ -5,10 +5,12 @@ import io.swagger.annotations.ApiOperation;
 import ke.co.skybill.revenuecollection.customer.entities.Country;
 import ke.co.skybill.revenuecollection.customer.models.AppCountryModel;
 import ke.co.skybill.revenuecollection.customer.entities.AppCountry;
+import ke.co.skybill.revenuecollection.customer.models.PagedResponse;
 import ke.co.skybill.revenuecollection.customer.repositories.AppCountryDao;
 import ke.co.skybill.revenuecollection.customer.repositories.CountryDao;
 import ke.co.skybill.revenuecollection.customer.security.ApiPrincipal;
 import ke.co.skybill.revenuecollection.customer.utils.Response;
+import ke.co.skybill.revenuecollection.customer.utils.SingleItemResponse;
 import ke.co.skybill.revenuecollection.customer.utils.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +42,7 @@ public class CountryController {
 
     @GetMapping
     @ApiOperation(value = "Get all app countries")
-    public ResponseEntity getAll(
+    public PagedResponse getAll(
             @RequestParam(value = "direction", defaultValue = Util.Pagination.DEFAULT_ORDER_DIRECTION) String direction,
             @RequestParam(value = "oderBy", defaultValue = Util.Pagination.DEFAULT_ORDER_BY) String orderBy,
             @RequestParam(value = "page", defaultValue = Util.Pagination.DEFAULT_PAGE_NUMBER) int page,
@@ -53,16 +55,16 @@ public class CountryController {
         List<AppCountryModel> countryModels = new ArrayList<>();
         for (AppCountry country : countries)
             countryModels.add(AppCountryModel.tranform(country));
-        return Util.getResponse(Response.SUCCESS.status(), Util.getResponse(countries, countryModels));
+        return Util.getResponse(countries, countryModels);
     }
 
     @GetMapping("all")
     @ApiOperation(value = "Get all countries")
-    public ResponseEntity getAllCountries(
+    public SingleItemResponse getAllCountries(
             @ApiIgnore @AuthenticationPrincipal ApiPrincipal principal) {
 
         List<Country> countries = countryDao.findAll();
-        return Util.getResponse(Response.SUCCESS.status(), countries);
+        return new SingleItemResponse(Response.SUCCESS.status(), countries);
 
     }
 
